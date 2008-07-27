@@ -4,27 +4,9 @@ require 'net/http'
 
 module MythTV
 
-  # Raised when we get a response that isn't what we expect
-  class CommunicationError < RuntimeError
-  end
-  
-  # Raised when we have a protocol version mismatch
-  class ProcolError < RuntimeError
-  end
-  
-  # Raised when a method is passed incomplete initialisation information
-  class ArgumentError < RuntimeError
-  end
-  
   class Backend
     include Socket::Constants
   
-    # Our current protocol implementation. TODO: Consider how we support
-    # multiple protocol versions within a single gem. In theory this is
-    # just a case of limiting the number of attr_accessors that are
-    # class_eval'd onto MythTV::Recording, and bumping the number below
-    MYTHTV_PROTO_VERSION = 40
-    
     # The currently defined field separator in responses
     FIELD_SEPARATOR = "[]:[]"
     
@@ -42,7 +24,11 @@ module MythTV
     # Open the socket, make a protocol check, and announce we'd like an interactive
     # session with the backend server
     def initialize(options = {})
-      default_options = { :port => 6543, :status_port => 6544, :connection_type => :playback }
+      default_options = { :port => 6543,
+                          :status_port => 6544,
+                          :connection_type => :playback,
+                          :protocol_version => MythTV::DEFAULT_PROTOCOL_VERSION }
+      
       options = default_options.merge(options)
       
       raise ArgumentError, "You must specify a :host key and value to initialize()" unless options.has_key?(:host)
@@ -50,6 +36,7 @@ module MythTV
       @host = options[:host]
       @port = options[:port]
       @status_port = options[:status_port]
+      @protocol_version = options[:protocol_version]
 
       @socket = TCPSocket.new(@host, @port)
       
@@ -70,9 +57,9 @@ module MythTV
     # Tell the backend we speak a specific version of the protocol. Raise
     # an error if the backend does not accept that version.
     def check_proto
-      send("MYTH_PROTO_VERSION #{MYTHTV_PROTO_VERSION}")
+      send("MYTH_PROTO_VERSION #{@protocol_version}")
       response = recv
-      unless response[0] == "ACCEPT" && response[1] == MYTHTV_PROTO_VERSION.to_s
+      unless response[0] == "ACCEPT" && response[1] == @protocol_version.to_s
         close
         raise ProcolError, response.join(": ")
       end
@@ -147,10 +134,17 @@ module MythTV
       while recording_count > 0
         recording_array = response.slice!(0, Recording::RECORDINGS_ELEMENTS.length)
 
-        recording = Recording.new(recording_array)
+        recording = Recording.new(recording_array, { :protocol_version => @protocol_version })
 
-        options[:filter].each_pair do |k, v|
-          recordings.push(recording) if recording.send(k) =~ v
+        # If we've been given a hash, assume it contains a mapping of recording property to
+        # regexp
+        if options[:filter].class == Hash
+          options[:filter].each_pair do |k, v|
+            recordings.push(recording) if recording.send(k) =~ v
+          end
+        else
+          # Otherwise, we just push the recording
+          recordings.push(recording)
         end
         
         recording_count -= 1
@@ -195,7 +189,7 @@ module MythTV
 
       while recording_count > 0
         recording_array = response.slice!(0, Recording::RECORDINGS_ELEMENTS.length)
-        recordings << Recording.new(recording_array)
+        recordings << Recording.new(recording_array, { :protocol_version => @protocol_version })
         recording_count -= 1
       end
 
@@ -268,6 +262,50 @@ module MythTV
       image_data
     end
     
+    # This method wraps the Mythbackend Status port URL /Myth/GetProgramGuide.
+    # It returns an array of Channel instances, which in turn contain an array of
+    # Program instances.
+    # 
+    # Valid options keys are:
+    #   :start_time      -  Time instance
+    #   :end_time        -  Time instance
+    #   :num_of_channels -  Number of channels to return
+    #   :start_chan_id   -  Starting channel number
+    #   :details         -  Set to '0' to prevent the Program description being returned
+    #
+    # http://localhost:6544/Myth/GetProgramGuide?StartTime=2008-03-15T12:00:00&EndTime=2008-03-15T14:00:00&NumOfChannels=1&StartChanId=1021&Details=0
+    #
+    # Notes: I'm not sure I like the separation of the Event class and the Recording class.
+    def get_program_guide(options = {})
+      # Default start time for EPG information is the current time
+      default_guide_start = Time.now
+
+      # Default to 7 days worth of data
+      default_guide_duration = 60 * 60 * 24 * 7
+      
+      default_options = { :start_time => default_guide_start,
+                          :end_time => default_guide_start + default_guide_duration,
+                          :num_of_channels => 5,
+                          :start_chan_id => 1,
+                          :details => 1 }
+      
+      options = default_options.merge(options)
+      
+      query_string  = "StartTime=#{MythTV::Utils.format_time(options[:start_time], :delimited)}"
+      query_string += "&EndTime=#{MythTV::Utils.format_time(options[:end_time], :delimited)}"
+      query_string += "&NumOfChannels=#{options[:num_of_channels]}"
+      query_string += "&StartChanId=#{options[:start_chan_id]}"
+      query_string += "&Details=#{options[:details]}"
+      
+      url = URI::HTTP.build( { :host  => @host,
+                               :port  => @status_port,
+                               :path  => "/Myth/GetProgramGuide",
+                               :query => query_string } )
+      
+      # Make a GET request, and store the image data returned
+      Net::HTTP.get(url)
+    end
+    
     ############################################################################
     # FILETRANSFER RELATED METHODS
 
@@ -278,6 +316,7 @@ module MythTV
       data_conn = Backend.new(:host => @host,
                               :port => @port,
                               :status_port => @status_port,
+                              :protocol_version => @protocol_version,
                               :connection_type => :filetransfer,
                               :filename => recording.path)
 
@@ -352,7 +391,7 @@ module MythTV
           cur_rec = recv
           puts "Current recording is:"
           puts cur_rec.inspect
-          recording = Recording.new(cur_rec)
+          recording = Recording.new(cur_rec, { :protocol_version => @protocol_version })
         else
           puts "spawn_live_tv returned with false or nil"
           return false
@@ -411,6 +450,36 @@ module MythTV
 
       response.split(FIELD_SEPARATOR)
     end
+    
+    def self.process_guide_xml(guide_xml)
+      channels = []
+      # TODO: Parse XML here.
+      doc = REXML::Document.new guide_xml
+      
+      REXML::XPath.each( doc, "//Channel/Program") do |program|
+        program_attributes  = program.attributes
+        program_description = program.text
+        
+        channel = program.parent
+        channel_attributes  = program.parent.attributes
+        
+        # Check for existing channel, and if not, create one
+        unless channel_obj = channels.find { |c| c.chanNum == channel_attributes[:chanNum] }
+          channel_obj = MythTV::Channel.new
+          channel_attributes.each { |key, value| channel_obj.send(key + '=', channel.attributes[key]) }
+          channels << channel_obj
+        end
+        
+        program_obj = MythTV::Program.new
+        program_attributes.each { |key, value| program_obj.send(key + '=', program.attributes[key]) }
+        program_obj.description = program_description
+        
+        channel_obj.programs << program_obj
+      end
+      
+      channels
+    end
+    
     
   end # end Backend
 end # end MythTV

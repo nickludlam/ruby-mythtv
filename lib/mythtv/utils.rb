@@ -34,12 +34,5 @@ module MythTV
       end
     end
 
-    def self.process_guide_xml(guide_xml)
-      # TODO: Parse XML here.
-      doc = REXML::Document.new guide_xml
-      
-      
-      
-    end
   end # end Utils
 end # end MythTV

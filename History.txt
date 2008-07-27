@@ -1,3 +1,10 @@
+== 0.1.1 (2008-07-27)
+
+* Updated documentation
+* Added initial multiple protocol version support via protocol.rb
+* Implemented MythTV::Backend#get_program_guide() to wrap "/Myth/GetProgramGuide" from the Mythbackend Status port
+* Created a Utils class to hold miscellaneous methods. The utils.rb file also holds the exception classes
+
 == 0.1.0 (2008-06-08)
 
 * Initial release onto GitHub/Rubyforge

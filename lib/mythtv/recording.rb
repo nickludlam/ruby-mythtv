@@ -16,17 +16,29 @@ module MythTV
                             :videoproperties, :subtitleType ]
     
     # Warning, metaprogramming ahead: Create attr_accessors for each symbol defined in MythTVRecording::RECORDINGS_ELEMENTS
-    def initialize(recording_array)
-      class << self;self;end.class_eval { RECORDINGS_ELEMENTS.each { |field| attr_accessor field } }
+    def initialize(recording_array, options = {})
       
-      RECORDINGS_ELEMENTS.each_with_index do |field, i|
+      default_options = { :protocol_version => MythTV::DEFAULT_PROTOCOL_VERSION }
+      options = default_options.merge(options)
+      
+      # Find out how many of the recording elements we use for this protocol version
+      unless mapping = MythTV::PROTOCOL_MAPPING.find { |m| m[:protocol_version] == options[:protocol_version] }
+        raise MythTV::ProcolError, "Unable to find definition of protocol version #{options[:protocol_version]} in MythTV::PROTOCOL_MAPPING"
+      end
+      
+      # Slice the RECORDINGS_ELEMENTS array according to how many we require for this protocol version
+      elements_for_protocol_version = RECORDINGS_ELEMENTS.slice(0, mapping[:recording_elements])
+      
+      class << self;self;end.class_eval { elements_for_protocol_version.each { |field| attr_accessor field } }
+      
+      elements_for_protocol_version.each_with_index do |field, i|
         send(field.to_s + '=', recording_array[i])
       end
     end
   
     # A string representation of a Recording is used when we converse with the MythTV Backend about that recording
     def to_s
-      RECORDINGS_ELEMENTS.collect { |field| self.send(field.to_s) }.join(MythTV::Backend::FIELD_SEPARATOR) + MythTV::Backend::FIELD_SEPARATOR
+      @elements_for_protocol_version.collect { |field| self.send(field.to_s) }.join(MythTV::Backend::FIELD_SEPARATOR) + MythTV::Backend::FIELD_SEPARATOR
     end
     
     # Convenience methods to access the start and end times as Time objects, and duration as an Float
@@ -35,10 +47,10 @@ module MythTV
     def duration; self.end - self.start; end
   
     # Cribbed from the Mythweb PHP code. Required for some method calls to the backend
-    def myth_delimited_recstart;  myth_format_time(recstartts, :delimited); end
+    def myth_delimited_recstart;  MythTV::Utils::format_time(recstartts, :delimited); end
   
     # Formats the start time for use in the copy process, as the latter half of the filename is a non-delimited time string
-    def myth_nondelimited_recstart; myth_format_time(recstartts, :nondelimited);  end
+    def myth_nondelimited_recstart; MythTV::Utils::format_time(recstartts, :nondelimited);  end
     
     # Convert the lo/hi long representation of the filesize into a string
     def filesize
@@ -51,17 +63,5 @@ module MythTV
     # Strip the filename out from the path returned by the server
     def filename;  File.basename(URI.parse(pathname).path); end
   
-    private
-  
-    def myth_format_time(timestamp, format = :nondelimited)
-      timestamp = timestamp.to_i if timestamp.class != Bignum
-      case format
-      when :nondelimited
-        Time.at(timestamp).strftime("%Y%m%d%H%M%S")
-      when :delimited
-        Time.at(timestamp).strftime("%Y-%m-%dT%H:%M:%S")
-      end
-    end
-      
   end # end Recording
 end # end MythTV

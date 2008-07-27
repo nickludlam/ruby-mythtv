@@ -33,6 +33,14 @@ and can be cloned from
   # Get an array of recordings
   recordings = backend.query_recordings
   
+  # Download a recording
+  @backend.download(recordings[0])
+  
+  # Stream a recording into a block
+  @backend.stream(recordings[0], :transfer_blocksize => 65535) do |chunk|
+    ..do something with the 64k chunk..
+  end
+  
   # Generate a thumbnail of the most recent recording, at 60 seconds in from the start
   preview_thumbnail = @backend.preview_image(recordings[0], :secs_in => 60)
   File.open('preview_thumbnail.png', 'w') { |f| f.write(preview_thumbnail) }
