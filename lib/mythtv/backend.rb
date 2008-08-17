@@ -179,7 +179,8 @@ module MythTV
     end
     
     # This method returns an array of recording objects which describe which programmes
-    # are to be recorded as far as the current EPG data extends
+    # are to be recorded when matched against the current EPG. The resulting matches
+    # are retrieved by query_pending().
     def query_scheduled
       send("QUERY_GETALLSCHEDULED")
       response = recv
@@ -196,6 +197,32 @@ module MythTV
       recordings = recordings.sort_by { |r| r.startts }
       recordings.reverse!
     end
+
+    # This method returns an array of recording objects which describe actual programmes within
+    # the EPG data which are to be recorded, by matching EPG data to the scheduled recordings
+    # list.
+    def query_pending
+      send("QUERY_GETALLPENDING")
+      response = recv
+      
+      # We can safely discard the explicit conflict count, as we can always itterate
+      # throught the recordings, collecting where recstatus_string == "Conflict"
+      conflict_count = response.shift.to_i
+
+      # Next comes the number of elements
+      recording_count = response.shift.to_i
+      recordings = []
+
+      while recording_count > 0
+        recording_array = response.slice!(0, Recording::RECORDINGS_ELEMENTS.length)
+        recordings << Recording.new(recording_array, { :protocol_version => @protocol_version })
+        recording_count -= 1
+      end
+
+      recordings = recordings.sort_by { |r| r.startts }
+      recordings.reverse!
+    end
+
 
     # Wrap the QUERY_MEMSTATS backend command. Returns a hash with keys for
     # :used_memory, :free_memory, :total_swap and :free_swap
@@ -219,7 +246,7 @@ module MythTV
 
       response[0].to_i
     end
-
+    
     # This is used when transfering files from the backend. It requests that the next block of data
     # be sent to the socket, ready for us to recieve
     def query_filetransfer_transfer_block(sock_num, size)
@@ -280,8 +307,8 @@ module MythTV
       # Default start time for EPG information is the current time
       default_guide_start = Time.now
 
-      # Default to 7 days worth of data
-      default_guide_duration = 60 * 60 * 24 * 7
+      # Default to 4 hours
+      default_guide_duration = 60 * 60 * 4
       
       default_options = { :start_time => default_guide_start,
                           :end_time => default_guide_start + default_guide_duration,
@@ -302,6 +329,7 @@ module MythTV
                                :path  => "/Myth/GetProgramGuide",
                                :query => query_string } )
       
+      puts "URL: #{url}"
       # Make a GET request, and store the image data returned
       Net::HTTP.get(url)
     end
@@ -401,11 +429,21 @@ module MythTV
         return false
       end
     end
-
+    
     # TODO: Finish this off. Check response?
     def stop_livetv(recorder_id)
       query_recorder(recorder_id, "STOP_LIVETV")
       response = recv
+    end
+    
+    # Send a message to the backend to notify it of a required reschedule
+    # for a given recordid
+    def reschedule_recordings(recordid)
+      query = "RESCHEDULE_RECORDINGS %s" % recordid
+      send(query)
+      
+      response = recv
+      response
     end
     
     private
@@ -453,18 +491,20 @@ module MythTV
     
     def self.process_guide_xml(guide_xml)
       channels = []
+      
       # TODO: Parse XML here.
-      doc = REXML::Document.new guide_xml
+      doc = REXML::Document.new(guide_xml)
+      channel_obj = nil
       
       REXML::XPath.each( doc, "//Channel/Program") do |program|
         program_attributes  = program.attributes
         program_description = program.text
         
         channel = program.parent
-        channel_attributes  = program.parent.attributes
+        channel_attributes = program.parent.attributes
         
         # Check for existing channel, and if not, create one
-        unless channel_obj = channels.find { |c| c.chanNum == channel_attributes[:chanNum] }
+        unless channel_obj = channels.find { |c| c.chanNum == channel_attributes.get_attribute('chanNum').value }
           channel_obj = MythTV::Channel.new
           channel_attributes.each { |key, value| channel_obj.send(key + '=', channel.attributes[key]) }
           channels << channel_obj
@@ -479,7 +519,6 @@ module MythTV
       
       channels
     end
-    
     
   end # end Backend
 end # end MythTV
