@@ -29,6 +29,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'rexml/document'
 require 'mythtv/utils.rb'
 require 'mythtv/protocol.rb'
+require 'mythtv/database.rb'
 require 'mythtv/backend.rb'
 require 'mythtv/recording.rb'
 require 'mythtv/channel.rb'

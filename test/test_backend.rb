@@ -46,6 +46,12 @@ class TestBackend < Test::Unit::TestCase
     assert_equal test_image_sig, png_sig
   end
   
+  # def test_process_guide_xml
+  #   guide_data = @backend.get_program_guide
+  #   
+  #   channels = MythTV::Backend.process_guide_xml(guide_data)
+  # end
+  
   # Don't run this by default as it takes a while. Possibly limit to 100kB?
   #def test_download
   #  recordings = @backend.query_recordings

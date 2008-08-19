@@ -19,7 +19,9 @@ module MythTV
                 :connection_type,
                 :filetransfer_port,
                 :filetransfer_size,
-                :socket
+                :socket,
+                :database
+
 
     # Open the socket, make a protocol check, and announce we'd like an interactive
     # session with the backend server
@@ -31,13 +33,17 @@ module MythTV
       
       options = default_options.merge(options)
       
+      # We cannot start unless we've been given a host to connect to
       raise ArgumentError, "You must specify a :host key and value to initialize()" unless options.has_key?(:host)
+
+      # Initialise our database object. Can be nil if the connection failed, or we aren't given the keys
+      @database = MythTV::Database.new(options)
       
       @host = options[:host]
       @port = options[:port]
       @status_port = options[:status_port]
       @protocol_version = options[:protocol_version]
-
+      
       @socket = TCPSocket.new(@host, @port)
       
       check_proto
@@ -437,13 +443,14 @@ module MythTV
     end
     
     # Send a message to the backend to notify it of a required reschedule
-    # for a given recordid
+    # for a given recordid. Will raise a CommunicationError exception if there
+    # is an unexpected response, otherwise 
     def reschedule_recordings(recordid)
       query = "RESCHEDULE_RECORDINGS %s" % recordid
       send(query)
       
       response = recv
-      response
+      raise CommunicationError, ("Unexpected response %s" % response[0]) unless response[0] == "1"
     end
     
     private

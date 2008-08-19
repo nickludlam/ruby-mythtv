@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{ruby-mythtv}
   s.rubygems_version = %q{0.1.0}
+  s.add_dependency('mysql')
   s.summary = %q{Ruby implementation of the MythTV backend protocol}
   s.test_files = ["test/test_backend.rb", "test/test_helper.rb"]
 end

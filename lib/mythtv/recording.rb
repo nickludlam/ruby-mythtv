@@ -40,8 +40,7 @@ module MythTV
                       11 => "NeverRecord",
                       12 => "Offline",
                       13 => "OtherShowing" }
-                      
-      
+    
     # Warning, metaprogramming ahead: Create attr_accessors for each symbol defined in MythTVRecording::RECORDINGS_ELEMENTS
     def initialize(recording_array, options = {})
       

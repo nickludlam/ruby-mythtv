@@ -3,14 +3,21 @@ module MythTV
   # The class used to represent events in the EPG
   class Program
 
-    attr_accessor :programFlags, :title, :programId, :catType, :category
-    attr_accessor :seriesId, :endTime, :lastModified, :subTitle, :stars
-    attr_accessor :repeat, :fileSize, :startTime, :hostname, :airdate
-    attr_accessor :description
+    PROGRAM_ELEMENTS = [ :parent, :programFlags, :title, :programId, :catType,
+                         :category, :seriesId, :endTime, :lastModified, :subTitle,
+                         :stars, :repeat, :fileSize, :startTime, :hostname,
+                         :airdate, :description ]
+    
+    attr_accessor *PROGRAM_ELEMENTS
     
     def initialize
     end
 
+    # Debugging method
+    def to_s
+      PROGRAM_ELEMENTS.collect { |v| "#{v}: '#{self.send(v) || 'nil'}'" }.join(", ")
+    end
+    
   end  
 
 end
