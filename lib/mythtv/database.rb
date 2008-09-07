@@ -39,60 +39,6 @@ module MythTV
       @database_password = options[:database_password]
       
       @connection = Mysql.real_connect(@database_host, @database_user, @database_password, @database_name)
-      
-      # Create a mapping of Fixnum -> CONSTANT to dereference the Mysql::Field#type() method output
-      #
-      # Types are:
-      # TYPE_DECIMAL = 0
-      # TYPE_TINY = 1
-      # TYPE_SHORT = 2
-      # TYPE_LONG = 3
-      # TYPE_FLOAT = 4
-      # TYPE_DOUBLE = 5
-      # TYPE_NULL = 6
-      # TYPE_TIMESTAMP = 7
-      # TYPE_LONGLONG = 8
-      # TYPE_INT24 = 9
-      # TYPE_DATE = 10
-      # TYPE_TIME = 11
-      # TYPE_DATETIME = 12
-      # TYPE_YEAR = 13
-      # TYPE_NEWDATE = 14
-      # TYPE_ENUM = 247
-      # TYPE_SET = 248
-      # TYPE_TINY_BLOB = 249
-      # TYPE_MEDIUM_BLOB = 250
-      # TYPE_LONG_BLOB = 251
-      # TYPE_BLOB = 252
-      # TYPE_VAR_STRING = 253
-      # TYPE_STRING = 254
-      # TYPE_GEOMETRY = 255
-      # TYPE_CHAR = TYPE_TINY
-      # TYPE_INTERVAL = TYPE_ENUM
-      #
-      column_type_map = Hash.new
-      Mysql::Field.constants.each do |cname|
-        if (cname =~ /^TYPE_/)
-          cval = Mysql::Field.const_get(cname)
-          column_type_map[cval] = cname if cval.class == Fixnum
-        end
-      end
-      
-      # Cache the various table's column types for easy lookup
-      @column_type_cache = {}
-      
-      ["channel", "program", "record"].each do |table|
-        @column_type_cache[table] = {}
-        
-        result = @connection.list_fields(table)
-        # Create a hash mapping in the appropriate table hash, which
-        # maps the column name to the dereferenced column type CONSTANT
-        while field = result.fetch_field()
-          @column_type_cache[table][field.name()] = column_type_map[field.type()]
-        end
-        
-      end
-      
     end
     
     # Close the database connection properly
