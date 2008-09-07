@@ -15,32 +15,32 @@ module MythTV
                             :hasAirDate, :playgroup, :recpriority2, :parentid, :storagegroup, :audioproperties,
                             :videoproperties, :subtitleType ]
     
-    # Map the numeric recstatus field to a status message.
+    # Map the numeric 'recstatus' field to a status message.
     # Extracted from libmythtv/programinfo.h
-    RECSTATUS_MAP = { -9 => "Failed",
-                      -8 => "Tuner Busy",
-                      -7 => "Low Disk Space",
-                      -6 => "Cancelled",
-                      -5 => "Missed",
-                      -4 => "Aborted",
-                      -3 => "Recorded",
-                      -2 => "Recording",
-                      -1 => "Will Record",
-                       0 => "Unknown",
-                       1 => "Dont Record",
-                       2 => "Previous Recording",
-                       3 => "Current Recording",
-                       4 => "Earlier Showing",
-                       5 => "Too Many Recordings",
-                       6 => "Not Listed",
-                       7 => "Conflict",
-                       8 => "Later Showing",
-                       9 => "Repeat",
-                      10 => "Inactive",
-                      11 => "NeverRecord",
-                      12 => "Offline",
-                      13 => "OtherShowing" }
-    
+    RECSTATUS_MAP = { -9 => :rsFailed,
+                      -8 => :rsTunerBusy,
+                      -7 => :rsLowDiskSpace,
+                      -6 => :rsCancelled,
+                      -5 => :rsMissed,
+                      -4 => :rsAborted,
+                      -3 => :rsRecorded,
+                      -2 => :rsRecording,
+                      -1 => :rsWillRecord,
+                       0 => :rsUnknown,
+                       1 => :rsDontRecord,
+                       2 => :rsPreviousRecording,
+                       3 => :rsCurrentRecording,
+                       4 => :rsEarlierShowing,
+                       5 => :rsTooManyRecordings,
+                       6 => :rsNotListed,
+                       7 => :rsConflict,
+                       8 => :rsLaterShowing,
+                       9 => :rsRepeat,
+                      10 => :rsInactive,
+                      11 => :rsNeverRecord,
+                      12 => :rsOffLine,
+                      13 => :rsOtherShowing }
+
     # Warning, metaprogramming ahead: Create attr_accessors for each symbol defined in MythTVRecording::RECORDINGS_ELEMENTS
     def initialize(recording_array, options = {})
       
@@ -58,7 +58,7 @@ module MythTV
       class << self;self;end.class_eval { elements_for_protocol_version.each { |field| attr_accessor field } }
       
       elements_for_protocol_version.each_with_index do |field, i|
-        send(field.to_s + '=', recording_array[i])
+        send("#{field}=", recording_array[i])
       end
     end
     
@@ -77,10 +77,10 @@ module MythTV
     def recstatus_string; RECSTATUS_MAP[recstatus.to_i]; end
   
     # Cribbed from the Mythweb PHP code. Required for some method calls to the backend
-    def myth_delimited_recstart;  MythTV::Utils::format_time(recstartts, :delimited); end
+    def myth_delimited_recstart;  MythTV::Utils.format_time(recstartts, :delimited); end
   
     # Formats the start time for use in the copy process, as the latter half of the filename is a non-delimited time string
-    def myth_nondelimited_recstart; MythTV::Utils::format_time(recstartts, :nondelimited);  end
+    def myth_nondelimited_recstart; MythTV::Utils.format_time(recstartts, :nondelimited);  end
     
     # Convert the lo/hi long representation of the filesize into a string
     def filesize

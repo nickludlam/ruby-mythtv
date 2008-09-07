@@ -20,17 +20,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-module MythTV;
-  VERSION = '0.1.1'
+module MythTV
+  VERSION = '0.1.2'
+  
+  def self.connect(options)
+    backend = connect_backend(options)
+    database = connect_database(options)
+    
+    [backend, database]
+  end
+  
+  def self.connect_backend(options)
+    Backend.new(options)
+  end
+  
+  def self.connect_database(options)
+    Database.new(options)
+  end
+  
 end
 
 $:.unshift(File.dirname(__FILE__))
 
-require 'rexml/document'
-require 'mythtv/utils.rb'
-require 'mythtv/protocol.rb'
-require 'mythtv/database.rb'
-require 'mythtv/backend.rb'
-require 'mythtv/recording.rb'
 require 'mythtv/channel.rb'
 require 'mythtv/program.rb'
+require 'mythtv/protocol.rb'
+require 'mythtv/recording.rb'
+require 'mythtv/recording_schedule.rb'
+require 'mythtv/utils.rb'
+require 'mythtv/database.rb'
+require 'mythtv/backend.rb'

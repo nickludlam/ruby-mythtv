@@ -10,5 +10,5 @@ module MythTV
   # Set the default protocol version to announce. Should
   # track the latest release
   DEFAULT_PROTOCOL_VERSION = 40
-
+  
 end

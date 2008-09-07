@@ -5,6 +5,7 @@ require 'net/http'
 module MythTV
 
   class Backend
+    
     include Socket::Constants
   
     # The currently defined field separator in responses
@@ -19,12 +20,23 @@ module MythTV
                 :connection_type,
                 :filetransfer_port,
                 :filetransfer_size,
-                :socket,
-                :database
-
-
+                :socket
+    
     # Open the socket, make a protocol check, and announce we'd like an interactive
-    # session with the backend server
+    # session with the backend server.
+    #
+    # Required keys:
+    #
+    # :host => The name or address of the server backend you're connecting to
+    #
+    # Optional keys:
+    #
+    # :port             => The backend port to connect to (Default 6543)
+    # :status_port      => The status port to connect to (Default 6544)
+    # :connection_type  => The connection type. Either :playback or :filetransfer
+    # :protocol_version => The version number of the protocol. Defaults to the most
+    #                      recent release protocol version
+    
     def initialize(options = {})
       default_options = { :port => 6543,
                           :status_port => 6544,
@@ -36,18 +48,15 @@ module MythTV
       # We cannot start unless we've been given a host to connect to
       raise ArgumentError, "You must specify a :host key and value to initialize()" unless options.has_key?(:host)
 
-      # Initialise our database object. Can be nil if the connection failed, or we aren't given the keys
-      @database = MythTV::Database.new(options)
-      
       @host = options[:host]
       @port = options[:port]
       @status_port = options[:status_port]
       @protocol_version = options[:protocol_version]
-      
+
       @socket = TCPSocket.new(@host, @port)
-      
+    
       check_proto
-      
+    
       if options[:connection_type] == :playback
         announce_playback()
       elsif options[:connection_type] == :filetransfer
@@ -184,7 +193,7 @@ module MythTV
       response[0] == "OK" ? chain_id : false
     end
     
-    # This method returns an array of recording objects which describe which programmes
+    # This method returns an array of recording objects which describe which events
     # are to be recorded when matched against the current EPG. The resulting matches
     # are retrieved by query_pending().
     def query_scheduled
@@ -204,7 +213,7 @@ module MythTV
       recordings.reverse!
     end
 
-    # This method returns an array of recording objects which describe actual programmes within
+    # This method returns an array of recording objects which describe actual events within
     # the EPG data which are to be recorded, by matching EPG data to the scheduled recordings
     # list.
     def query_pending
@@ -344,7 +353,7 @@ module MythTV
     # FILETRANSFER RELATED METHODS
 
     # Yield into the given block with the data buffer of size TRANSFER_BLOCKSIZE
-    def stream(recording, options = {}, &block)
+    def stream(filename, options = {}, &block)
     
       # Initialise a new connection of connection_type => :filetransfer
       data_conn = Backend.new(:host => @host,
@@ -352,8 +361,8 @@ module MythTV
                               :status_port => @status_port,
                               :protocol_version => @protocol_version,
                               :connection_type => :filetransfer,
-                              :filename => recording.path)
-
+                              :filename => filename)
+                              
       ft_port = data_conn.filetransfer_port
       ft_size = data_conn.filetransfer_size
     
@@ -371,7 +380,13 @@ module MythTV
           buffer = ""
        
           while buffer.length < blocksize
-            buffer += data_conn.socket.recv(blocksize)
+            bytes = data_conn.socket.recv(blocksize)
+
+            # Stop if we've not got any data this time round. EOF?
+            break if bytes.length < 1
+
+            buffer += bytes
+            
             # Special case for when the remainer to fetch is less than TRANSFER_BLOCKSIZE
             break if total_transfered + buffer.length == ft_size
           end
@@ -402,7 +417,7 @@ module MythTV
       end
 
       File.open(filename, "wb") do |f|
-        stream(recording) { |data| f.write(data) }
+        stream(recording.path) { |data| f.write(data) }
       end
     end
     
@@ -494,37 +509,6 @@ module MythTV
       end
 
       response.split(FIELD_SEPARATOR)
-    end
-    
-    def self.process_guide_xml(guide_xml)
-      channels = []
-      
-      # TODO: Parse XML here.
-      doc = REXML::Document.new(guide_xml)
-      channel_obj = nil
-      
-      REXML::XPath.each( doc, "//Channel/Program") do |program|
-        program_attributes  = program.attributes
-        program_description = program.text
-        
-        channel = program.parent
-        channel_attributes = program.parent.attributes
-        
-        # Check for existing channel, and if not, create one
-        unless channel_obj = channels.find { |c| c.chanNum == channel_attributes.get_attribute('chanNum').value }
-          channel_obj = MythTV::Channel.new
-          channel_attributes.each { |key, value| channel_obj.send(key + '=', channel.attributes[key]) }
-          channels << channel_obj
-        end
-        
-        program_obj = MythTV::Program.new
-        program_attributes.each { |key, value| program_obj.send(key + '=', program.attributes[key]) }
-        program_obj.description = program_description
-        
-        channel_obj.programs << program_obj
-      end
-      
-      channels
     end
     
   end # end Backend

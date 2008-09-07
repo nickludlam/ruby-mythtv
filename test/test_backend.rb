@@ -2,9 +2,8 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 
 class TestBackend < Test::Unit::TestCase
   def setup
-    abort("\nERROR: You must set the environment variable MYTHTV_BACKEND to the name of your MythTV backend server\n\n") unless ENV['MYTHTV_BACKEND']
-    host = ENV['MYTHTV_BACKEND']
-    @backend = MythTV::Backend.new(:host => host)
+    abort("\n\tERROR: You must set the environment variable MYTHTV_BACKEND to the name of your MythTV backend server\n\n") unless ENV['MYTHTV_BACKEND']
+    @backend = MythTV.connect_backend(:host => ENV['MYTHTV_BACKEND'])
   end
   
   def teardown

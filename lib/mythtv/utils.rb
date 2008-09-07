@@ -20,8 +20,10 @@ module MythTV
         time = time_value
       when Bignum
         time = Time.at(time_value)
+      when String
+        time = Time.at(time_value.to_i)
       else
-        raise MythTV::ArgumentError, "format_time must be given a valid time representation. Was given #{time_value.class}"
+        raise MythTV::ArgumentError, "format_time must be given a valid time representation. Was given a #{time_value.class} with value #{time_value}"
       end
 
       case format
