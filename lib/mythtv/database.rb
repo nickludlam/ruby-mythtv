@@ -23,6 +23,8 @@ module MythTV
     #
     # :database_host => Defaults to the same value as the backend host, unless specified
     # :database_name => Defaults to 'mythconverg' unless specified
+    # :log_output    => A Ruby Logger output. Defaults to STDERR
+    # :log_level     => A Ruby Logger log level. Defaults to Logger::WARN
     def initialize(options)
       # Initialise the caches for later use
       @setting_cache = {}
@@ -39,6 +41,9 @@ module MythTV
       @database_password = options[:database_password]
       
       @connection = Mysql.real_connect(@database_host, @database_user, @database_password, @database_name)
+      
+      # Set up a local logging object
+      @log = MythTV::Utils.setup_logging(options)
     end
     
     # Close the database connection properly
@@ -89,7 +94,7 @@ module MythTV
       (converted_query, st_args) = simple_options_to_sql(options, 'channel')
       st_query += converted_query
       
-      #puts "CHANNEL QUERY: #{st_query}"
+      @log.debug("CHANNEL QUERY: #{st_query}")
       
       # Execute the statement, and create the Channel objects from the results
       st = @connection.prepare(st_query)
@@ -111,7 +116,7 @@ module MythTV
       (converted_query, st_args) = simple_options_to_sql(options, 'program')
       st_query += converted_query
       
-      puts "PROGRAM QUERY: #{st_query}"
+      @log.debug("PROGRAM QUERY: #{st_query}")
       
       # Execute the statement, and create the Channel objects from the results
       st = @connection.prepare(st_query)
@@ -133,7 +138,7 @@ module MythTV
       (converted_query, st_args) = simple_options_to_sql(options, 'record')
       st_query += converted_query
       
-      puts "RECORD QUERY: #{st_query}"
+      @log.debug("RECORD QUERY: #{st_query}")
       
       # Execute the statement, and create the Channel objects from the results
       st = @connection.prepare(st_query)
@@ -204,7 +209,6 @@ module MythTV
 
       [assembled_query, where_args]
     end
-  
   
   end
 end

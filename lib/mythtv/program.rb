@@ -22,6 +22,14 @@ module MythTV
     
     def to_s; DATABASE_COLUMNS.collect { |v| "#{v}: '#{send(v) || 'nil'}'" }.join(", "); end
   
+    def channel
+      channels = @db.list_channels(:conditions => ['chanid = ?', self.chanid])
+      if channels.length == 1
+        channels[0]
+      else
+        nil
+      end
+    end
   end
   
 end

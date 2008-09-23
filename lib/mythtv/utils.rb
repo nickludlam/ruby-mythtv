@@ -36,5 +36,11 @@ module MythTV
       end
     end
 
+    def self.setup_logging(options = {})
+      log = Logger.new(options[:log_output] || STDERR)
+      log.level = options[:log_level] || Logger::WARN
+      log
+    end
+    
   end # end Utils
 end # end MythTV

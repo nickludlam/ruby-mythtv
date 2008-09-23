@@ -3,7 +3,10 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 class TestDatabase < Test::Unit::TestCase
   def setup
     abort("\n\tmyERROR: You must set the environment variable MYTHTV_DB to the name of your MythTV database server\n\n") unless ENV['MYTHTV_DB']
-    @db = MythTV.connect_database(:host => ENV['MYTHTV_DB'], :database_user => 'mythtv', :database_password => '4c6UUCJp')
+    @db = MythTV.connect_database(:host => ENV['MYTHTV_DB'],
+                                  :database_user => 'mythtv',
+                                  :database_password => '4c6UUCJp',
+                                  :log_level => Logger::WARN)
   end
   
   def teardown
@@ -63,8 +66,7 @@ class TestDatabase < Test::Unit::TestCase
   end
   
   def test_list_programs_with_search
-    # Hopefully people testing are likely to have a set of programs with "news" in the title
-    programs = @db.list_programs(:conditions => ['title LIKE ?', "%news%"],
+    programs = @db.list_programs(:conditions => ['title LIKE ?', "%"],
                                  :limit => 5)
     assert programs.length > 0
   end
@@ -73,7 +75,14 @@ class TestDatabase < Test::Unit::TestCase
     # Programs in the next two hours
     programs = @db.list_programs(:conditions => ['starttime BETWEEN ? AND ?', Time.now, Time.now + 7200],
                                  :limit => 1)
+    
     assert_equal 1, programs.length
+  end
+  
+  def test_program_links_to_channel
+    programs = @db.list_programs(:conditions => ['title LIKE ?', "%"], :limit => 1)
+    program_channel = programs[0].channel
+    assert_kind_of MythTV::Channel, program_channel
   end
 
   def test_new_schedule

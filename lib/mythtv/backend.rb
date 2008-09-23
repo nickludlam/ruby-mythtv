@@ -64,6 +64,9 @@ module MythTV
       else
         raise ArgumentError, "Unknown connection type '#{options[:connection_type]}'"
       end
+      
+      # Set up a local logging object
+      @log = MythTV::Utils.setup_logging(options)
     end
 
     ############################################################################

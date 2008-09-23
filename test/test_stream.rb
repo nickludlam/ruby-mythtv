@@ -6,12 +6,11 @@ require '../lib/ruby-mythtv'
 
 require 'pp'
 
+# A test class for looking at ways to stream mythtv recordings through ffmpeg, and out to an HTTP client
+# This is just kept here for reference purposes, and is not integrated into the test suite
 class StreamFileHandler < Mongrel::HttpHandler
 
   def process(request, response)
-    # pp request.body
-    # pp request.params
-    
     pp "request.params => #{request.params['REQUEST_PATH']}"
     
     response.write("HTTP/1.1 200 OK\r\n")

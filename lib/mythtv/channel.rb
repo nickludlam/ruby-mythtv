@@ -5,8 +5,10 @@ module MythTV
     # Columns from the database
     DATABASE_COLUMNS = [ :chanid, :channum, :freqid, :sourceid, :callsign, :name, :icon, :finetune,
                          :videofilters, :xmltvid, :recpriority, :contrast, :brightness, :colour,
-                         :hue, :tvformat, :commfree, :visible, :outputfilters, :useonairguide,
-                         :mplexid, :serviceid, :atscsrcid, :tmoffset, :atsc_major_chan,
+                         :hue, :tvformat, #:commfree,
+                         :visible, :outputfilters, :useonairguide,
+                         :mplexid, :serviceid, #:atscsrcid,
+                         :tmoffset, :atsc_major_chan,
                          :atsc_minor_chan, :last_record, :default_authority, :commmethod ]
     
     attr_accessor(*DATABASE_COLUMNS)
@@ -16,7 +18,7 @@ module MythTV
     # 
     def initialize(channel_array, db_instance)
       DATABASE_COLUMNS.each_with_index do |col, i|
-        send("#{col}=", channel_array[i])
+        self.send("#{col}=", channel_array[i])
       end
       
       @db = db_instance
