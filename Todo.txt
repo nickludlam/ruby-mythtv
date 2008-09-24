@@ -1,17 +1,5 @@
-Implement the Recorder class, and associated functions (see Python module)
-Look at how we obtain the channel icon by streaming a backend file (see Perl module)
-Support Ruby 1.9
-Support seeking with the MythTV::Backend#stream() method
-
-From Database
--------------
-
-Channel
-Program
-Recording
-
-
-Classes
--------
-Backend (main class)
-Database (manages DB connection....singleton?)
+- Implement the Recorder class, and associated functions (see existing MythTV Python module)
+- Look at how we obtain the channel icon by streaming a backend file (see existing MythTV Perl module)
+- Support Ruby 1.9
+- Support seeking with the MythTV::Backend#stream() method
+- Work out method to remove and add database columns for Channel/Program/RecordingSchedule, as we do for the PROTOCOL mapping system. It seems the database can change without the Protocol version being bumped, so they are independent.

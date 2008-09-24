@@ -73,9 +73,9 @@ module MythTV
     def end;  Time.at(recendts.to_i); end
     def duration; self.end - self.start; end
     
-    # Convert the status number into a string via our map
-    def recstatus_string; RECSTATUS_MAP[recstatus.to_i]; end
-  
+    # Convert the status number into a symbol via our map
+    def recstatus_sym; RECSTATUS_MAP[recstatus.to_i]; end
+    
     # Cribbed from the Mythweb PHP code. Required for some method calls to the backend
     def myth_delimited_recstart;  MythTV::Utils.format_time(recstartts, :delimited); end
   

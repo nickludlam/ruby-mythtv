@@ -5,9 +5,9 @@ module MythTV
     # Columns from the database
     DATABASE_COLUMNS = [ :chanid, :channum, :freqid, :sourceid, :callsign, :name, :icon, :finetune,
                          :videofilters, :xmltvid, :recpriority, :contrast, :brightness, :colour,
-                         :hue, :tvformat, #:commfree,
+                         :hue, :tvformat, :commfree,
                          :visible, :outputfilters, :useonairguide,
-                         :mplexid, :serviceid, #:atscsrcid,
+                         :mplexid, :serviceid, :atscsrcid,
                          :tmoffset, :atsc_major_chan,
                          :atsc_minor_chan, :last_record, :default_authority, :commmethod ]
     
