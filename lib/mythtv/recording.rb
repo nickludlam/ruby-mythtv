@@ -55,17 +55,21 @@ module MythTV
       # Slice the RECORDINGS_ELEMENTS array according to how many we require for this protocol version
       elements_for_protocol_version = RECORDINGS_ELEMENTS.slice(0, mapping[:recording_elements])
       
-      class << self;self;end.class_eval { elements_for_protocol_version.each { |field| attr_accessor field } }
+      self.class.class_eval { elements_for_protocol_version.each { |field| attr_accessor field } }
       
       elements_for_protocol_version.each_with_index do |field, i|
         send("#{field}=", recording_array[i])
       end
+      
+      @elements_for_protocol_version = elements_for_protocol_version
     end
     
     
     # A string representation of a Recording is used when we converse with the MythTV Backend about that recording
     def to_s
-      @elements_for_protocol_version.collect { |field| self.send(field.to_s) }.join(MythTV::Backend::FIELD_SEPARATOR) + MythTV::Backend::FIELD_SEPARATOR
+      @elements_for_protocol_version.collect do |field|
+        self.send(field.to_s) 
+      end.join(MythTV::Backend::FIELD_SEPARATOR) + MythTV::Backend::FIELD_SEPARATOR
     end
     
     # Convenience methods to access the start and end times as Time objects, and duration as an Float

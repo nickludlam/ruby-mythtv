@@ -3,10 +3,11 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 class TestDatabase < Test::Unit::TestCase
   def setup
     abort("\n\tmyERROR: You must set the environment variable MYTHTV_DB to the name of your MythTV database server\n\n") unless ENV['MYTHTV_DB']
+    abort("\n\tmyERROR: You must set the environment variable MYTHTV_PW to the name of your MythTV database server\n\n") unless ENV['MYTHTV_PW']
     @db = MythTV.connect_database(:host => ENV['MYTHTV_DB'],
                                   :database_user => 'mythtv',
-                                  :database_password => '4c6UUCJp',
-                                  :log_level => Logger::WARN)
+                                  :database_password => ENV['MYTHTV_PW'],
+                                  :log_level => Logger::DEBUG)
   end
   
   def teardown
@@ -102,7 +103,32 @@ class TestDatabase < Test::Unit::TestCase
     
     assert new_schedule.recordid > 0
     
-    assert new_schedule.destroy()
+    destroy_result = new_schedule.destroy()
+    assert destroy_result
+  end
+  
+  def test_new_and_modify_schedule
+    # Get list of schedules for later reference
+    num_schedules = @db.list_recording_schedules
+    programs = @db.list_programs(:conditions => ['starttime BETWEEN ? AND ?', Time.now + 3600, Time.now + 7200],
+                                 :limit => 1)
+    
+    # Convert our first program selected into a recording schedule
+    new_schedule = MythTV::RecordingSchedule.new(programs[0], @db)
+    new_schedule.save
+    
+    new_schedule.type = 4
+    new_schedule.save
+
+    test_query = @db.list_recording_schedules(:conditions => ['recordid = ?', new_schedule.recordid])
+    assert_equal 1, test_query.length
+    
+    test_retrieval = test_query[0]
+    
+    assert_equal 4, test_retrieval.type
+
+    destroy_result = new_schedule.destroy()
+    assert destroy_result
   end
   
 end

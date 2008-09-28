@@ -1,3 +1,5 @@
+require 'logger'
+
 module MythTV
   
   # Raised when we get a response that isn't what we expect

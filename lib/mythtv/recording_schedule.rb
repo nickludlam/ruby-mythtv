@@ -2,19 +2,8 @@ module MythTV
   
   class RecordingSchedule
 
-    DATABASE_COLUMNS = [ :recordid, :type, :chanid, :starttime, :startdate, :endtime, :enddate,
-                         :title, :subtitle, :description, :category, :profile, :recpriority,
-                         :autoexpire, :maxepisodes, :maxnewest, :startoffset, :endoffset,
-                         :recgroup, :dupmethod, :dupin, :station, :seriesid, :programid,
-                         :search, :autotranscode, :autocommflag, :autouserjob1, :autouserjob2,
-                         :autouserjob3, :autouserjob4, :findday, :findtime, :findid, :inactive,
-                         :parentid, :transcoder, :tsdefault, :playgroup, :prefinput, :next_record,
-                         :last_record, :last_delete, :storagegroup, :avg_delay ]
-    
-    attr_accessor(*DATABASE_COLUMNS)
-    
     # Map the 'type' column to a string
-    RECTYPE_MAP = { 0 => :kNotRecording,
+    RS_TYPE_MAP = { 0 => :kNotRecording,
                     1 => :kSingleRecord,
                     2 => :kTimeslotRecord,
                     3 => :kChannelRecord,
@@ -25,8 +14,9 @@ module MythTV
                     8 => :kDontRecord,
                     9 => :kFindDailyRecord,
                    10 => :kFindWeeklyRecord }
+    
     #
-    RECDUPIN_MASK = { :kDupsInRecorded    => 0x01,
+    RS_DUPIN_MASK = { :kDupsInRecorded    => 0x01,
                       :kDupsInOldRecorded => 0x02,
                       :kDupsInAll         => 0x0F,
                       :kDupsNewEpi        => 0x10,
@@ -34,25 +24,32 @@ module MythTV
                       :kDupsExGeneric     => 0x40,
                       :kDupsFirstNew      => 0x80 }
     #
-    RECDUPMETHOD_MASK = { :kDupCheckNone        => 0x01,
+    RS_DUPMETHOD_MASK = { :kDupCheckNone        => 0x01,
                           :kDupCheckSub         => 0x02,
                           :kDupCheckDesc        => 0x04,
                           :kDupCheckSubDesc     => 0x06,
                           :kDupCheckSubThenDesc => 0x08 }
     
-
-    COLUMN_TO_ENUM_MAP = { :type      => RECTYPE_MAP,
-                           :dupmethod => RECDUPIN_MASK,
-                           :dupmethod => RECDUPMETHOD_MASK }
+                      
+    COLUMN_TO_ENUM_MAP = { :type      => RS_TYPE_MAP,
+                           :dupmethod => RS_DUPIN_MASK,
+                           :dupmethod => RS_DUPMETHOD_MASK }
 
     # Columns which need ENUMS: dupmethod, dupin, type? search?
     # Foreign keys: transcoder, storagegroup
     def initialize(data_source, db_instance)
       @db = db_instance
       
+      # Find out the attributes this class has from the schema calculations earlier
+      columns = db_instance.table_columns[self.class]
+      
+      self.class.class_eval { attr_accessor(*columns) }
+      
+      @columns = columns
+      
       if data_source.class == Array
         # If we're given an array, it's from the database, so construct via DATABASE_COLUMNS
-        DATABASE_COLUMNS.each_with_index do |col, i|
+        @db.table_columns[RecordingSchedule].each_with_index do |col, i|
           send("#{col}=", data_source[i])
         end
       elsif data_source.class == Program
@@ -119,13 +116,13 @@ module MythTV
     end
     
     def save
-      query =  "REPLACE INTO record (" + DATABASE_COLUMNS.collect { |c| c.to_s }.join(",") + ")"
-      query += " VALUES (" + (1..DATABASE_COLUMNS.length).map {'?'}.join(',') + ")"
+      query =  "REPLACE INTO record (" + @columns.collect { |c| c.to_s }.join(",") + ")"
+      query += " VALUES (" + (1..@columns.length).map {'?'}.join(',') + ")"
 
       puts query
       
       st = @db.connection.prepare(query)
-      st_args = DATABASE_COLUMNS.collect { |c| send(c) }
+      st_args = @columns.collect { |c| send(c) }
       result = st.execute(*st_args)
       
       if result.affected_rows() == 1
@@ -149,7 +146,7 @@ module MythTV
       result.affected_rows() == 1
     end
     
-    def to_s; DATABASE_COLUMNS.collect { |v| "#{v}: '#{send(v) || 'nil'}'" }.join(", "); end
+    def to_s; @columns.collect { |v| "#{v}: '#{send(v) || 'nil'}'" }.join(", "); end
     
   end
   

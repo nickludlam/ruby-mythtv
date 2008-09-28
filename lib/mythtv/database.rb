@@ -5,12 +5,13 @@ module MythTV
   
   class Database
 
-    attr_accessor :connection
-    attr_accessor :setting_cache
+    attr_accessor :connection     # The MySQL connection object
+    attr_accessor :setting_cache  # The Hash which stores previously retrieved settings
+    attr_accessor :table_columns  # The Hash which contains the column info for the tables
     
-    TABLE_TO_CLASS_MAP = { 'channel' => MythTV::Channel,
-                           'program' => MythTV::Program,
-                           'record'  => MythTV::RecordingSchedule }
+    TABLE_TO_CLASS_MAP = { 'channel' => Channel,
+                           'program' => Program,
+                           'record'  => RecordingSchedule }
     
     # Initialise and connect to the MySQL server
     #
@@ -44,6 +45,13 @@ module MythTV
       
       # Set up a local logging object
       @log = MythTV::Utils.setup_logging(options)
+      
+      # Query the schema version, and calculate the columns in Channel, Program, and RecordingSchedule
+      @table_columns = {
+        Channel => process_dbschemaver(:channel),
+        Program => process_dbschemaver(:program),
+        RecordingSchedule => process_dbschemaver(:recording_schedule)
+      }
     end
     
     # Close the database connection properly
@@ -58,6 +66,8 @@ module MythTV
       return @setting_cache[key] if @setting_cache.has_key?(key)
       
       query = "SELECT data FROM settings WHERE value = ?"
+      # If we're explicitly given a value for hostname, then make this part of
+      # the WHERE condition
       query += " AND hostname = ?" unless hostname == ''
 
       st = @connection.prepare(query)
@@ -89,7 +99,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + MythTV::Channel::DATABASE_COLUMNS.collect { |c| c.to_s }.join(",") + " FROM channel"      
+      st_query =  "SELECT " + @table_columns[Channel].collect { |c| c.to_s }.join(",") + " FROM channel"      
       
       (converted_query, st_args) = simple_options_to_sql(options, 'channel')
       st_query += converted_query
@@ -111,7 +121,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + MythTV::Program::DATABASE_COLUMNS.collect { |c| c.to_s }.join(",") + " FROM program"
+      st_query =  "SELECT " + @table_columns[Program].collect { |c| c.to_s }.join(",") + " FROM program"
       
       (converted_query, st_args) = simple_options_to_sql(options, 'program')
       st_query += converted_query
@@ -133,7 +143,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + MythTV::RecordingSchedule::DATABASE_COLUMNS.collect { |c| c.to_s }.join(",") + " FROM record"
+      st_query =  "SELECT " + @table_columns[RecordingSchedule].collect { |c| c.to_s }.join(",") + " FROM record"
       
       (converted_query, st_args) = simple_options_to_sql(options, 'record')
       st_query += converted_query
@@ -150,6 +160,38 @@ module MythTV
     end
   
   private
+    # We need to work out what schema version the database is, and derive the columns
+    # present for each of the database tables represented in Channel, Program and RecordingSchedule
+    def process_dbschemaver(class_name_sym)
+      # First get the DBSchemaVer of the database we're talking to
+      schema_version = get_setting('DBSchemaVer').to_i
+      
+      #@log.debug("Got schema_version #{schema_version}")
+
+      base_columns_const_name = class_name_sym.to_s.upcase + "_BASE_COLUMNS"
+      # Duplicate this for schema change processing
+      table_columns = MythTV.const_get(base_columns_const_name).dup
+
+      #@log.debug("base table_columns are: #{table_columns.inspect}")
+      
+      # Find any schema changes for this version of the DBSchemaVer
+      schema_changes_const_name = class_name_sym.to_s.upcase + "_SCHEMA_CHANGES"
+      schema_changes = MythTV.const_get(schema_changes_const_name)
+      
+      # Process the :push and :remove keys appropriately
+      if schema_changes.has_key?(schema_version)
+        @log.debug("Schema mapping found. Applying changes to the column layout")
+        schema_changes[schema_version].each_pair do |action, columns|
+          columns.map do |column|
+            table_columns.send(action, column)
+          end
+        end
+      end
+
+      #@log.debug("Returning column array #{table_columns.inspect}")
+      table_columns
+    end
+  
   
     # A simple method which allows the presence of a key in the options array which matches
     # a column in the table to be turned into a simple equality statement, or IN statement.
@@ -166,7 +208,7 @@ module MythTV
       assembled_query = "" # Final output SQL goes in here
       
       # Turn the name of the table into a class reference, and find the column defs
-      table_columns = TABLE_TO_CLASS_MAP[table_name].const_get('DATABASE_COLUMNS')
+      table_columns = @table_columns[TABLE_TO_CLASS_MAP[table_name]]
       
       options.each_pair do |key, value|
         if table_columns.include?(key)
