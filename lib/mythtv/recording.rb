@@ -49,7 +49,7 @@ module MythTV
       
       # Find out how many of the recording elements we use for this protocol version
       unless mapping = MythTV::PROTOCOL_MAPPING.find { |m| m[:protocol_version] == options[:protocol_version] }
-        raise MythTV::ProcolError, "Unable to find definition of protocol version #{options[:protocol_version]} in MythTV::PROTOCOL_MAPPING"
+        raise MythTV::ProtocolError, "Unable to find definition of protocol version #{options[:protocol_version]} in MythTV::PROTOCOL_MAPPING"
       end
       
       # Slice the RECORDINGS_ELEMENTS array according to how many we require for this protocol version

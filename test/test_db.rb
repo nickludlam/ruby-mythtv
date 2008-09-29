@@ -5,7 +5,6 @@ class TestDatabase < Test::Unit::TestCase
     abort("\n\tmyERROR: You must set the environment variable MYTHTV_DB to the name of your MythTV database server\n\n") unless ENV['MYTHTV_DB']
     abort("\n\tmyERROR: You must set the environment variable MYTHTV_PW to the name of your MythTV database server\n\n") unless ENV['MYTHTV_PW']
     @db = MythTV.connect_database(:host => ENV['MYTHTV_DB'],
-                                  :database_user => 'mythtv',
                                   :database_password => ENV['MYTHTV_PW'],
                                   :log_level => Logger::DEBUG)
   end

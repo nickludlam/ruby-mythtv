@@ -1,18 +1,24 @@
-= Ruby-mythtv
+= ruby-mythtv
   
 == Description
 
-A pure Ruby implementation of the MythTV Backend protocol to allow interaction with a MythTV server. Features include browsing and streaming of recordings, and thumbnail generation. See http://github.com/nickludlam/ruby-mythtv for more details.
+A pure Ruby implementation of the MythTV Backend protocol, and a MySQL database wrapper to allow interaction with a MythTV server. Features include browsing and streaming of recordings, thumbnail generation, listing channels and programs, and recording schedule editing. Currently the most complicated use of the gem is from the tests in the test/ subdirectory. See http://github.com/nickludlam/ruby-mythtv for more details. 
 
 == Requirements
 
-This gem does not yet support multiple protocol versions, so it requires an up-to-date installation of MythTV v0.21, and specifically implements protocol version 40. For more information on the history of the MythTV protocol, see http://www.mythtv.org/wiki/index.php/Protocol
+This gem relies on the 'mysql' gem, and obviously requires a MythTV server to talk to. The Gem is version independent, and currently knows how to speak the backend protocol versions 31 and 40. It can also cope with different versions of the MySQL database schema.
 
 == Install
 
+To install from RubyForge:
+
+  $ gem install ruby-mythtv
+
+To install from GitHub:
+
   $ gem sources -a http://gems.github.com/ (only required once)
   $ gem install nickludlam-ruby-mythtv
-  
+
 == Source
 
 The ruby-mythtv source is available on GitHub at
@@ -25,10 +31,13 @@ and can be cloned from
   
 == Basic usage
 
+If you want to enumerate the current recordings, select one and stream it to disk, then it would
+look something like this.
+
   require 'ruby-mythtv'
   
   # Connect to the server
-  mythbackend, mythdb = MythTV.connect(:host => 'mythtv.localdomain')
+  mythbackend = MythTV.connect_backend(:host => 'mythtv.localdomain')
   
   # Get an array of recordings
   recordings = mythbackend.query_recordings
@@ -44,6 +53,38 @@ and can be cloned from
   # Generate a thumbnail of the most recent recording, at 60 seconds in from the start
   preview_thumbnail = mythbackend.preview_image(recordings[0], :secs_in => 60)
   File.open('preview_thumbnail.png', 'w') { |f| f.write(preview_thumbnail) }
+
+== Advanced usage
+
+If you wanted to search for a particular program name, and set up a schedule
+
+  require 'ruby-mythtv'
+
+  # Connect to the server
+  mythbackend, mythdb = MythTV.connect(:host => 'mythtv.localdomain',
+                                       :database_password => 'password')
+
+  # Find matches on our search term, and limit the results to 5 matches
+  programs = mythdb.list_programs(:conditions => ['title LIKE ?', "%SEARCH TERM%"],
+                                  :limit => 5)
+  
+  # Take the first program match, and convert it to a recording schedule
+  new_schedule = MythTV::RecordingSchedule.new(programs[0], mythdb)
+  new_schedule.save
+  
+  # Signal the backend of recording changes for our recording schedule entry
+  mythbackend.reschedule_recordings(new_schedule.recordid)
+  
+  # Let the backend resolve matches
+  sleep(5)
+
+  # Enumerate the list of pending recordings, find ours, and check for any conflicts
+  pending_recordings = mythbackend.query_pending
+  conflicts = pending_recordings.find { |p| p.recordid == new_schedule.recordid &&
+                                            p.recstatus_sym == :rsConflict }
+  
+  # If conflicts is empty, then all is good. If it is populated, then action needs
+  # to be taken, such as bumping the priority, or removing the clashes....
 
 == Author
 

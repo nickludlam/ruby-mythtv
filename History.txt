@@ -1,3 +1,12 @@
+== 0.2.0 (2008-09-29)
+
+* Bumped to version 0.2 as we now support proper editing of recording schedules, and speaking multiple versions of the database schema
+
+== 0.1.2 (2008-09-24)
+
+* Added support for talking to the MythTV MySQL database, to allow queries on the EPG, and interacting with recording schedules
+* Removed the XML program guide as it is superceded by the database
+
 == 0.1.1 (2008-07-27)
 
 * Updated documentation

@@ -30,9 +30,9 @@ module MythTV
       # Initialise the caches for later use
       @setting_cache = {}
       
-      default_options = { :database_name => 'mythconverg', :database_host => :host }
+      default_options = { :database_user => 'mythtv', :database_name => 'mythconverg', :database_host => :host }
       
-      return nil unless options.has_key?(:database_user) && options.has_key?(:database_password)
+      raise ArgumentError, ":database_password must be a key within the options argument Hash" unless options.has_key?(:database_password)
       
       options = default_options.merge(options)
       

@@ -5,7 +5,7 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |s|
   s.name = %q{ruby-mythtv}
-  s.version = "0.1.2"
+  s.version = "0.2.0"
  
   s.specification_version = 2 if s.respond_to? :specification_version=
  
@@ -21,7 +21,7 @@ spec = Gem::Specification.new do |s|
   s.rdoc_options = ["--main", "README.txt"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{ruby-mythtv}
-  s.rubygems_version = %q{0.1.2}
+  s.rubygems_version = %q{0.2.0}
   s.summary = %q{Ruby implementation of the MythTV backend protocol}
   s.test_files = ["test/test_backend.rb", "test/test_helper.rb"]
 end

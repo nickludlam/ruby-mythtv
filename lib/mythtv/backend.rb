@@ -79,7 +79,7 @@ module MythTV
       response = recv
       unless response[0] == "ACCEPT" && response[1] == @protocol_version.to_s
         close
-        raise ProcolError, response.join(": ")
+        raise ProtocolError, response.join(": ")
       end
     end
 
@@ -224,7 +224,7 @@ module MythTV
       response = recv
       
       # We can safely discard the explicit conflict count, as we can always itterate
-      # throught the recordings, collecting where recstatus_string == "Conflict"
+      # throught the recordings, collecting where recstatus_sym == :rsConflict
       conflict_count = response.shift.to_i
 
       # Next comes the number of elements
@@ -238,7 +238,7 @@ module MythTV
       end
 
       recordings = recordings.sort_by { |r| r.startts }
-      recordings.reverse!
+      recordings.reverse
     end
 
 
@@ -463,12 +463,16 @@ module MythTV
     # Send a message to the backend to notify it of a required reschedule
     # for a given recordid. Will raise a CommunicationError exception if there
     # is an unexpected response, otherwise 
-    def reschedule_recordings(recordid)
-      query = "RESCHEDULE_RECORDINGS %s" % recordid
+    def reschedule_recordings(recordid = -1)
+      # Coerce the argument into an integer, before it becomes part of the string,
+      # to help catch any accidental parameters send here
+      query = "RESCHEDULE_RECORDINGS %s" % (recordid.to_i)
       send(query)
       
       response = recv
       raise CommunicationError, ("Unexpected response %s" % response[0]) unless response[0] == "1"
+
+      true
     end
     
     private

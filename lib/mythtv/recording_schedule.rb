@@ -59,6 +59,7 @@ module MythTV
       
     end
     
+    # This method 
     def new_from_program(program)
       defaults = { :recordid => nil,
                    :type => 1, # Single recording
@@ -127,25 +128,39 @@ module MythTV
       
       if result.affected_rows() == 1
         # Set the recordid from the replace
-        @recordid = result.insert_id()
+        @recordid = result.insert_id().to_s
         return true
       else
         return false
       end
     end
     
+    # Re-select all the data from the database via the primary key, recordid
+    def reload
+      st_query =  "SELECT " + @db.table_columns[self.class].collect { |c| c.to_s }.join(",") + " FROM record"
+      st_query += " WHERE recordid = ?"
+
+      st = @db.connection.prepare(st_query)
+      results = st.execute(@recordid)
+
+      @db.table_columns[self.class].each_with_index do |col, i|
+        send("#{col}=", result[i])
+      end
+    end
+    
+    # Remove the row from the database
     def destroy
       # We should have a valid recordid before we continue
       return false if recordid < 1
       
-      query = "DELETE FROM record WHERE recordid = ?"
-      
-      st = @db.connection.prepare(query)
+      st_query = "DELETE FROM record WHERE recordid = ?"
+      st = @db.connection.prepare(st_query)
       result = st.execute(@recordid)
       
       result.affected_rows() == 1
     end
     
+    # Enable more pleasant debugging through a to_s method
     def to_s; @columns.collect { |v| "#{v}: '#{send(v) || 'nil'}'" }.join(", "); end
     
   end

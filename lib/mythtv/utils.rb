@@ -7,7 +7,7 @@ module MythTV
   end
   
   # Raised when we have a protocol version mismatch
-  class ProcolError < RuntimeError
+  class ProtocolError < RuntimeError
   end
   
   # Raised when a method is passed incomplete initialisation information
