@@ -151,7 +151,7 @@ module MythTV
     # Remove the row from the database
     def destroy
       # We should have a valid recordid before we continue
-      return false if recordid < 1
+      return false if recordid.to_i < 1
       
       st_query = "DELETE FROM record WHERE recordid = ?"
       st = @db.connection.prepare(st_query)

@@ -100,7 +100,7 @@ class TestDatabase < Test::Unit::TestCase
     # Assert that we now have one more schedule
     assert_equal num_schedules.length + 1, new_num_schedules.length
     
-    assert new_schedule.recordid > 0
+    assert new_schedule.recordid.to_i > 0
     
     destroy_result = new_schedule.destroy()
     assert destroy_result

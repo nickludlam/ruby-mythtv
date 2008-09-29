@@ -4,3 +4,4 @@
 - Support seeking with the MythTV::Backend#stream() method
 - Look at how we need to pass the DB instance to each constructor for Channel, Program and RecordingSchedule. Automate the link back to db instance?
 - Make use of the ENUMS placed in RecordingSchedule to help with validation of various columns
+- Introspect column types in the database, and coerce the values into the correct class. Currently recordid is a string, for instance
