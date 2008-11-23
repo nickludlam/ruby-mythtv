@@ -30,7 +30,7 @@ module MythTV
                           :kDupCheckSubDesc     => 0x06,
                           :kDupCheckSubThenDesc => 0x08 }
     
-                      
+    
     COLUMN_TO_ENUM_MAP = { :type      => RS_TYPE_MAP,
                            :dupmethod => RS_DUPIN_MASK,
                            :dupmethod => RS_DUPMETHOD_MASK }

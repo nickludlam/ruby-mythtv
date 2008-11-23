@@ -99,7 +99,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + @table_columns[Channel].collect { |c| c.to_s }.join(",") + " FROM channel"      
+      st_query = "SELECT " + @table_columns[Channel].collect { |c| c.to_s }.join(",") + " FROM channel"
       
       (converted_query, st_args) = simple_options_to_sql(options, 'channel')
       st_query += converted_query
@@ -121,7 +121,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + @table_columns[Program].collect { |c| c.to_s }.join(",") + " FROM program"
+      st_query = "SELECT " + @table_columns[Program].collect { |c| c.to_s }.join(",") + " FROM program"
       
       (converted_query, st_args) = simple_options_to_sql(options, 'program')
       st_query += converted_query
@@ -143,7 +143,7 @@ module MythTV
       # Merge in our defaults with what we've been given
       options = default_options.merge(options)
       
-      st_query =  "SELECT " + @table_columns[RecordingSchedule].collect { |c| c.to_s }.join(",") + " FROM record"
+      st_query = "SELECT " + @table_columns[RecordingSchedule].collect { |c| c.to_s }.join(",") + " FROM record"
       
       (converted_query, st_args) = simple_options_to_sql(options, 'record')
       st_query += converted_query
