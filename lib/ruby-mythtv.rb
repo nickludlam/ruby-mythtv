@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 
 module MythTV
-  VERSION = '0.2.0'
+  VERSION = '0.3.0'
   
   def self.connect(options)
     backend = connect_backend(options)
@@ -42,11 +42,12 @@ end
 
 $:.unshift(File.dirname(__FILE__))
 
+require 'mythtv/backend.rb'
+require 'mythtv/database.rb'
 require 'mythtv/channel.rb'
 require 'mythtv/program.rb'
 require 'mythtv/protocol.rb'
 require 'mythtv/recording.rb'
 require 'mythtv/recording_schedule.rb'
+require 'mythtv/setting.rb'
 require 'mythtv/utils.rb'
-require 'mythtv/database.rb'
-require 'mythtv/backend.rb'

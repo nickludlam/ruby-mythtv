@@ -12,22 +12,12 @@ class StreamFileHandler < Mongrel::HttpHandler
 
   def process(request, response)
     pp "request.params => #{request.params['REQUEST_PATH']}"
-    
     response.write("HTTP/1.1 200 OK\r\n")
-    #response.write("Cache-Control: no-cache\r\n")
-    #response.write("Pragma: no-cache\r\n")
-    #response.write("ETag: \"7531dc-102f000-44dda50e16281\"\r\n")
     response.write("Accept-Ranges: bytes\r\n")
     response.write("Content-Length: 999999999\r\n")
     response.write("Keep-Alive: timeout=5, max=100\r\n")
     response.write("Connection: Keep-Alive\r\n")
     response.write("Content-type: video/mpeg\r\n\r\n")
-    
-    # response.status = 200
-    # response.send_status(nil)
-    # response.header['Content-Type'] = "video/mpeg"
-    # response.header['Connection'] = "Close"
-    # response.send_header
     
     buffer=""
     total_bytes_read = 0

@@ -22,6 +22,14 @@ module MythTV
                 :filetransfer_size,
                 :socket
     
+    # Create a new instance of the backend connection, yield it into the block, then
+    # close once the block execution has finished
+    def self.perform_commands(initialize_options = {}, &block)
+      connection = self.new(initialize_options)
+      yield connection
+      connection.close
+    end
+    
     # Open the socket, make a protocol check, and announce we'd like an interactive
     # session with the backend server.
     #
@@ -275,7 +283,7 @@ module MythTV
     # Tell the backend we've finished talking to it for the current session
     def close
       send("DONE")
-      @socket.close unless @socket.nil?
+      @socket.close
     end
     
     ############################################################################

@@ -1,7 +1,7 @@
-- Implement the Recorder class, and associated functions (see existing MythTV Python module)
-- Look at how we obtain the channel icon by streaming a backend file (see existing MythTV Perl module)
-- Support Ruby 1.9
-- Support seeking with the MythTV::Backend#stream() method
-- Look at how we need to pass the DB instance to each constructor for Channel, Program and RecordingSchedule. Automate the link back to db instance?
-- Make use of the ENUMS placed in RecordingSchedule to help with validation of various columns
-- Introspect column types in the database, and coerce the values into the correct class. Currently recordid is a string, for instance
+== Todo
+
+* Implement the Recorder class, and associated functions (see existing MythTV Python module)
+* Look at how we obtain the channel icon by streaming a backend file (see existing MythTV Perl module)
+* Support Ruby 1.9
+* Support seeking with the MythTV::Backend#stream() method
+* Make use of the ENUMS placed in RecordingSchedule to help with validation of various columns

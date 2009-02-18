@@ -1,3 +1,8 @@
+== 0.3.0 (2009-02-18)
+
+* Replaced old database code with one based on ActiveRecord, which is now a dependency
+* Changed test code
+
 == 0.2.0 (2008-09-29)
 
 * Bumped to version 0.2 as we now support proper editing of recording schedules, and speaking multiple versions of the database schema

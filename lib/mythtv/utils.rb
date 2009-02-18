@@ -46,3 +46,12 @@ module MythTV
     
   end # end Utils
 end # end MythTV
+
+# Workaround for a dependency within ActiveRecord on ActiveSupport multibyte strings
+# TODO: Will this be necessary going forward?
+module ActiveSupport
+  module Multibyte
+    class Chars
+    end
+  end
+end

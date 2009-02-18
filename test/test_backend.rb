@@ -2,8 +2,8 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 
 class TestBackend < Test::Unit::TestCase
   def setup
-    abort("\n\tERROR: You must set the environment variable MYTHTV_BACKEND to the name of your MythTV backend server\n\n") unless ENV['MYTHTV_BACKEND']
-    @backend = MythTV.connect_backend(:host => ENV['MYTHTV_BACKEND'])
+    abort("\n\tERROR: You must set the environment variable MYTHTV_HOST to the name of your MythTV backend server\n\n") unless ENV['MYTHTV_HOST']
+    @backend = MythTV.connect_backend(:host => ENV['MYTHTV_HOST'])
   end
   
   def teardown
@@ -43,6 +43,20 @@ class TestBackend < Test::Unit::TestCase
     test_image_sig = (0..7).collect { |i| test_image[i] }
     
     assert_equal test_image_sig, png_sig
+  end
+  
+  # In this test, we ignore the @backend instance connection which was created by setup()
+  # and perform our own block of commands on a new connection
+  def test_perform_commands
+    MythTV::Backend.perform_commands(:host => ENV['MYTHTV_HOST']) do |connection|
+      # Check the query_uptime method and query_memstats methods
+      uptime = connection.query_uptime
+      assert uptime > 0
+      
+      memstats = connection.query_memstats
+      assert_equal Hash, memstats.class
+      assert_equal 4, memstats.keys.length
+    end
   end
   
   # def test_process_guide_xml
