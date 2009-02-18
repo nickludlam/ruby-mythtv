@@ -88,11 +88,11 @@ If you wanted to search for a particular program name, and set up a schedule
 
 == Author
 
-Written in 2008 by Nick Ludlam <nick@recoil.org>
+Written in 2008-2009 by Nick Ludlam <nick@recoil.org>
 
 == License
 
-Copyright (c) 2008 Nick Ludlam
+Copyright (c) 2008,2009 Nick Ludlam
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
