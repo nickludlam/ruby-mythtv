@@ -13,7 +13,7 @@ module MythTV
                             :dupin, :dupmethod, :recstartts, :recendts, :repeat, :programflags, :recgroup, :chancommfree,
                             :chanOutputFilters, :seriesid, :programid, :lastmodified, :stars, :originalAirDate,
                             :hasAirDate, :playgroup, :recpriority2, :parentid, :storagegroup, :audioproperties,
-                            :videoproperties, :subtitleType ]
+                            :videoproperties, :subtitleType, :year ]
     
     # Map the numeric 'recstatus' field to a status message.
     # Extracted from libmythtv/programinfo.h

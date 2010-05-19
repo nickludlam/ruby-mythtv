@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 
 module MythTV
-  VERSION = '0.3.0'
+  VERSION = '0.4.0'
   
   def self.connect(options)
     backend = connect_backend(options)
