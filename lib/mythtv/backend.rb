@@ -95,14 +95,14 @@ module MythTV
     # http://www.mythtv.org/wiki/index.php/Myth_Protocol_Command_ANN for details
     def announce_playback
       client_hostname = Socket.gethostname
-      
+      @log.debug "We are #{client_hostname}"
       # We don't want to receive broadcast events for this connection
       want_events = "0"
       
       send("ANN Playback #{client_hostname} #{want_events}")
       response = recv
 
-      unless response[0] == "OK"
+      unless response[0] =~ /OK/i
         close
         raise CommunicationError, response.join(": ")
       else
@@ -116,15 +116,18 @@ module MythTV
       raise ArgumentError, "you must specify a filename" if filename.nil?
       
       client_hostname = Socket.gethostname
+      @log.debug "We are #{client_hostname}"
   
       filename = "/" + filename if filename[0] != "/"  # Ensure leading slash
-  
+    
+      @log.debug "SENDING: ANN FileTransfer #{client_hostname}#{FIELD_SEPARATOR}#{filename}"
       send("ANN FileTransfer #{client_hostname}#{FIELD_SEPARATOR}#{filename}")
       response = recv
   
+      @log.debug "announce_filetransfer got : #{response.inspect}"
       # Should get back something like:
       #   OK[]:[]<socket number>[]:[]<file size high 32 bits>[]:[]<file size low 32 bits>
-      unless response[0] == "OK"
+      unless response[0] =~ /OK/i
         close
         raise CommunicationError, response.join(": ")
       else
@@ -132,6 +135,8 @@ module MythTV
         @filetransfer_size = [response[3].to_i, response[2].to_i].pack("ll").unpack("Q")[0]
         @connection_type = :filetransfer   # Not currently used, but may be in later versions
       end
+      
+      @log.debug "filetransfer_size : #{@filetransfer_size}"
     end
 
     # Simple method to query the load of the backend server. Returns a hash with keys for
@@ -192,7 +197,7 @@ module MythTV
     
     # This will trigger the backend to start recording Live TV from a certain channel.
     # TODO: This is currently buggy, so avoid until it's fixed in a later release
-    def spawn_live_tv(recorder_id, start_channel = 1)
+    def set_recorder_active(recorder_id, start_channel = 1)
       client_hostname = Socket.gethostname
       spawn_time = Time.now.strftime("%y-%m-%dT%H:%M:%S")
       chain_id = "livetv-#{client_hostname}-#{spawn_time}"
@@ -201,7 +206,7 @@ module MythTV
       response = recv
       
       # If we have an "OK" back, then return the chain_id, otherwise return false
-      response[0] == "OK" ? chain_id : false
+      response[0] =~ /OK/i ? chain_id : false
     end
     
     # This method returns an array of recording objects which describe which events
@@ -355,7 +360,7 @@ module MythTV
                                :path  => "/Myth/GetProgramGuide",
                                :query => query_string } )
       
-      puts "URL: #{url}"
+      @log.debug "URL: #{url}"
       # Make a GET request, and store the image data returned
       Net::HTTP.get(url)
     end
@@ -377,13 +382,21 @@ module MythTV
       ft_port = data_conn.filetransfer_port
       ft_size = data_conn.filetransfer_size
     
+      @log.debug "ft_port is #{ft_port}"
+    
       blocksize = options.has_key?(:transfer_blocksize) ? options[:transfer_blocksize] : TRANSFER_BLOCKSIZE
 
       total_transfered = 0
 
+      if ft_size == 0
+        stream_infinite = true
+      else
+        stream_infinite = false
+      end
+
       begin
         # While we still have data to fetch
-        while total_transfered < ft_size
+        while total_transfered < ft_size || stream_infinite
           # Make a request for the backend to send data
           query_filetransfer_transfer_block(ft_port, blocksize)
 
@@ -428,7 +441,7 @@ module MythTV
       end
 
       File.open(filename, "wb") do |f|
-        stream(recording.path) { |data| f.write(data) }
+        stream(recording.path) { |data| f.write(data); puts "." }
       end
     end
     
@@ -436,36 +449,46 @@ module MythTV
     def start_livetv(channel = 1)
       # If we have a free recorder...
       if recorder_id = get_next_free_recorder
-        puts "Got a recorder ID of #{recorder_id}"
+        @log.debug "Got a recorder ID of #{recorder_id}"
         # If we can spawn live tv...
-        if chain_id = spawn_live_tv(recorder_id, channel)
-          puts "Got a chain ID of #{chain_id}"
+        if chain_id = set_recorder_active(recorder_id, channel)
+          @log.debug "Got a chain ID of #{chain_id}"
           # Send the two backend event messages
           backend_message(["RECORDING_LIST_CHANGE", "empty"])
-          puts "Sent RECORDING_LIST_CHANGE"
+          @log.debug "Sent RECORDING_LIST_CHANGE"
           backend_message(["LIVETV_CHAIN UPDATE #{chain_id}", "empty"])
-          puts "Sent LIVETV_CHAIN UPDATE"
+          @log.debug "Sent LIVETV_CHAIN UPDATE"
+          
+          @log.debug "Sleeping...."
+          sleep 3
           
           # Find the filename from here...
           query_recorder(recorder_id, "GET_CURRENT_RECORDING")
           cur_rec = recv
-          puts "Current recording is:"
-          puts cur_rec.inspect
-          recording = Recording.new(cur_rec, { :protocol_version => @protocol_version })
+          @log.debug "Current recording is: #{cur_rec.inspect}"
+          
+          #recording = Recording.new(cur_rec, { :protocol_version => @protocol_version })
         else
-          puts "spawn_live_tv returned with false or nil"
+          @log.debug "set_recorder_active returned with false or nil"
           return false
         end
       else
-        puts "get_next_free_recorder returned with false or nil"
+        @log.debug "get_next_free_recorder returned with false or nil"
         return false
       end
+    end
+    
+    def check_livetv(recorder_id)
+      query_recorder(recorder_id, "IS_RECORDING")
+      response = recv
+      response
     end
     
     # TODO: Finish this off. Check response?
     def stop_livetv(recorder_id)
       query_recorder(recorder_id, "STOP_LIVETV")
       response = recv
+      response[0] =~ /OK/i
     end
     
     # Send a message to the backend to notify it of a required reschedule
@@ -499,7 +522,7 @@ module MythTV
     # RECORDING_LIST_CHANGE, and LIVETV CHAIN_UPDATE
     def backend_message(event_message = [])
       event_message.unshift("BACKEND_MESSAGE")
-      send(message.join(FIELD_SEPARATOR))
+      send(event_message.join(FIELD_SEPARATOR))
     end
     
     # Send a message to the MythTV Backend

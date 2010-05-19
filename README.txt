@@ -6,7 +6,7 @@ A pure Ruby implementation of the MythTV Backend protocol, and a MySQL database 
 
 == Requirements
 
-This gem relies on the 'mysql' gem, and obviously requires a MythTV server to talk to. The Gem is version independent, and currently knows how to speak the backend protocol versions 31 and 40. It can also cope with different versions of the MySQL database schema.
+This gem relies on ActiveRecord, Mysql and composite_primary_keys, and obviously requires a MythTV server to talk to. The Gem is version independent, and currently knows how to speak the backend protocol versions 31 and 40. It can also cope with different versions of the MySQL database schema.
 
 == Install
 
@@ -92,7 +92,7 @@ Written in 2008-2009 by Nick Ludlam <nick@recoil.org>
 
 == License
 
-Copyright (c) 2008,2009 Nick Ludlam
+Copyright (c) 2008-2010 Nick Ludlam
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

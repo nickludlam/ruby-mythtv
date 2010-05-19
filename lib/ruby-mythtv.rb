@@ -42,6 +42,15 @@ end
 
 $:.unshift(File.dirname(__FILE__))
 
+# Moved to dabase.rb for now...
+# require 'rubygems' 
+# gem 'activerecord', '2.2.2' 
+# require 'activerecord' 
+# gem 'composite_primary_keys', '2.2.2' 
+# require 'composite_primary_keys'
+#require 'mysql'
+
+
 require 'mythtv/backend.rb'
 require 'mythtv/database.rb'
 require 'mythtv/channel.rb'
