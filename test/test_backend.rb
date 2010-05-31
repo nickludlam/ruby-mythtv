@@ -40,6 +40,12 @@ class TestBackend < Test::Unit::TestCase
     
     # Define an array of the decimal values of the PNG magic number
     png_sig = [137, 80, 78, 71, 13, 10, 26, 10]
+
+    # Tested in ruby 1.9.2 returns chr instead of integers. 
+    # Tested result png for validity.
+
+    png_sig.map!{|n| n.chr} if RUBY_VERSION == "1.9.2"
+    
     test_image_sig = (0..7).collect { |i| test_image[i] }
     
     assert_equal test_image_sig, png_sig
