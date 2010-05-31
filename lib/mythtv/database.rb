@@ -29,7 +29,10 @@ module MythTV
                           :database_port => 3306 }
       
       options = default_options.merge(options)
-      
+
+      # Set up a local logging object
+      @log = MythTV::Utils.setup_logging(options)
+            
       @database_host = options[:database_host] == :host ? options[:host] : options[:database_host]
       @database_name = options[:database_name]
       @database_user = options[:database_user]
@@ -53,9 +56,6 @@ module MythTV
       MythTV::Program.establish_connection(@connection_details)
       MythTV::RecordingSchedule.establish_connection(@connection_details)
       MythTV::Setting.establish_connection(@connection_details)
-      
-      # Set up a local logging object
-      @log = MythTV::Utils.setup_logging(options)
       
       # Although we don't need to give back an instance, as we now work through
       # class methods, we pass back self for the constructor

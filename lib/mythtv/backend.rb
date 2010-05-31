@@ -52,6 +52,9 @@ module MythTV
                           :protocol_version => MythTV::DEFAULT_PROTOCOL_VERSION }
       
       options = default_options.merge(options)
+
+      # Set up a local logging object
+      @log = MythTV::Utils.setup_logging(options)
       
       # We cannot start unless we've been given a host to connect to
       raise ArgumentError, "You must specify a :host key and value to initialize()" unless options.has_key?(:host)
@@ -72,9 +75,6 @@ module MythTV
       else
         raise ArgumentError, "Unknown connection type '#{options[:connection_type]}'"
       end
-      
-      # Set up a local logging object
-      @log = MythTV::Utils.setup_logging(options)
     end
 
     ############################################################################
