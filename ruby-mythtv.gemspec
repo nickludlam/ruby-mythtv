@@ -16,7 +16,7 @@ spec = Gem::Specification.new do |s|
   s.rdoc_options = ['--main', 'README.txt']
   s.require_paths = ['lib']
   s.rubyforge_project = %q{ruby-mythtv}
-  s.rubygems_version = %q{0.3.0}
+  s.rubygems_version = %q{0.4.0}
   
   s.add_dependency('mysql')
   s.add_dependency('activerecord')

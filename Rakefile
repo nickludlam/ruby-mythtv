@@ -4,12 +4,12 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |s|
   s.name = 'ruby-mythtv'
-  s.version = '0.3.0'
+  s.version = '0.4.0'
  
   s.specification_version = 2 if s.respond_to? :specification_version=
  
   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
-  s.date = %q{2009-02-18}
+  s.date = %q{2010-05-30}
   s.description = %q{Ruby implementation of the MythTV communication protocol, and interface to the MythTV database}
   s.authors = [ 'Nick Ludlam' ]
   s.email = %q{nick@recoil.org}
@@ -20,11 +20,11 @@ spec = Gem::Specification.new do |s|
   s.rdoc_options = ['--main', 'README.txt']
   s.require_paths = ['lib']
   s.rubyforge_project = %q{ruby-mythtv}
-  s.rubygems_version = %q{0.3.0}
+  s.rubygems_version = %q{0.4.0}
   
-  s.add_dependency('mysql')
-  s.add_dependency('activerecord')
-  s.add_dependency('composite_primary_keys')
+  s.add_dependency 'mysql'
+  s.add_dependency 'activerecord', "~> 2.3.5"
+  s.add_dependency 'composite_primary_keys'
   
   s.summary = %q{Ruby implementation of the MythTV backend protocol}
   s.test_files = Dir["test/*.rb"]
@@ -41,18 +41,18 @@ end
 
 desc "Run basic unit tests"
 Rake::TestTask.new("test") do |t|
-  t.pattern = ENV["TESTFILES"] || ['test/test_backend.rb', 'test/test_db.rb']
+  t.pattern = ENV["TESTFILES"] || ['./test/test_backend.rb', './test/test_db.rb']
   t.verbose = true
   t.warning = true
 end
 
 Rake::TestTask.new('test:db') do |t|
-  t.pattern = ['test/test_db.rb']
+  t.pattern = ['./test/test_db.rb']
   t.verbose = true
 end
 
 Rake::TestTask.new('test:backend') do |t|
-  t.pattern = ['test/test_backend.rb']
+  t.pattern = ['./test/test_backend.rb']
   t.verbose = true
 end
 
